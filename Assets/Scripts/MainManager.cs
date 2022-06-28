@@ -1,5 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
+using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
@@ -10,9 +12,14 @@ public class MainManager : MonoBehaviour
     public int LineCount = 6;
     public Rigidbody Ball;
 
+    public TextMeshProUGUI PlayerName;
     public Text ScoreText;
     public GameObject GameOverText;
-    
+
+    public static MainManager Instance;
+    public string playerName;
+    public int score;
+
     private bool m_Started = false;
     private int m_Points;
     
@@ -36,6 +43,17 @@ public class MainManager : MonoBehaviour
                 brick.onDestroyed.AddListener(AddPoint);
             }
         }
+    }
+    private void Awake()
+    {
+        if (Instance != null)
+        {
+            Destroy(gameObject);
+            return;
+        }
+
+        Instance = this;
+        DontDestroyOnLoad(gameObject);
     }
 
     private void Update()
@@ -61,6 +79,31 @@ public class MainManager : MonoBehaviour
             }
         }
     }
+    public void SaveNameScore()
+    {
+        SaveData data = new SaveData
+        {
+            PlayerName = playerName,
+            Score = score
+        };
+
+        string json = JsonUtility.ToJson(data);
+
+        File.WriteAllText(Application.persistentDataPath + "/savefile.json", json);
+    }
+
+    public void LoadNameScore()
+    {
+        string path = Application.persistentDataPath + "/savefile.json";
+        if (File.Exists(path))
+        {
+            string json = File.ReadAllText(path);
+            SaveData data = JsonUtility.FromJson<SaveData>(json);
+
+            playerName = data.PlayerName;
+            score = data.Score;
+        }
+    }
 
     void AddPoint(int point)
     {
@@ -72,5 +115,13 @@ public class MainManager : MonoBehaviour
     {
         m_GameOver = true;
         GameOverText.SetActive(true);
+    }
+
+    [System.Serializable]
+    class SaveData
+    {
+        public string PlayerName;
+        public int Score;
+
     }
 }
